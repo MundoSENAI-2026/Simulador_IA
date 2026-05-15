@@ -1,37 +1,63 @@
-import paho.mqtt.client as mqtt
+import socket
 import json
 import time
 import random
 
-# Configurações do Broker
-BROKER = "broker.emqx.io" 
-TOPICO = "senai/biorreator/dados"
+# =========================
+# CONFIGURAÇÃO DA REDE LOCAL
+# =========================
 
-# ID de cliente único para o simulador
-cliente = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="Simulador_BR01_Completo")
+# IP do computador que roda o analista.py
+HOST = "127.0.0.1"
 
-print(f"🔄 Conectando ao broker {BROKER}...")
+# Porta usada pelo analista
+PORTA = 5000
 
-try:
-    cliente.connect(BROKER, 1883)
-    cliente.loop_start()
-    print("✅ MÁQUINA TRANSMITINDO DADOS COMPLETOS (TIT, PIT, LIT, AIT)!")
-except Exception as e:
-    print(f"❌ Erro ao conectar: {e}")
-    exit()
+print("🚀 MÁQUINA INDUSTRIAL INICIADA")
+print(f"📡 Enviando dados para {HOST}:{PORTA}")
 
 while True:
-    # Gerando dados baseados na Lista de Instrumentos
+
+    # =========================
+    # SIMULAÇÃO DOS SENSORES
+    # =========================
     dados = {
-        "temperatura_c": round(random.uniform(34, 41), 1), # TIT_100_01
-        "pressao": round(random.uniform(1.0, 2.5), 2),     # PIT_100_01
-        "nivel": round(random.uniform(60, 85), 1),         # LIT_100_01
-        "ph": round(random.uniform(6.2, 7.8), 1)           # AIT_100_01
+
+        # TIT_100_01
+        "temperatura_c": round(random.uniform(34, 41), 1),
+
+        # PIT_100_01
+        "pressao": round(random.uniform(1.0, 2.5), 2),
+
+        # LIT_100_01
+        "nivel": round(random.uniform(60, 85), 1),
+
+        # AIT_100_01
+        "ph": round(random.uniform(6.2, 7.8), 1)
+
     }
-    
-    # Publica no tópico
-    cliente.publish(TOPICO, json.dumps(dados))
-    print(f"📡 Enviado para o Supervisório: {dados}")
-    
-    # Ajustado para 10 segundos conforme solicitado
+
+    try:
+
+        # =========================
+        # CONEXÃO COM ANALISTA
+        # =========================
+        cliente = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        cliente.connect((HOST, PORTA))
+
+        # Envia os dados
+        cliente.send(json.dumps(dados).encode())
+
+        print(f"📤 Dados enviados: {dados}")
+
+        cliente.close()
+
+    except Exception as e:
+
+        print(f"❌ Erro de conexão: {e}")
+
+    # =========================
+    # INTERVALO
+    # =========================
     time.sleep(10)
